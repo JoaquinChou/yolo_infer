@@ -14,27 +14,20 @@ class YOLODet:
         if len(self.model_section) > 1:
             assert 'Only one model is supported at a time. Please check the model name in the config file.'
         self.model_type = self.model_section.upper()
-        self.onnx_path = self.config.get(self.model_section, 'onnx_path')
-        self.gpu_id = int(self.config.get(self.model_section, 'gpu_id'))
-        self.model_only = bool(self.config.get(
-            self.model_section, 'model_only'))
-        self.score_thr = float(self.config.get(
-            self.model_section, 'score_thr'))
-        self.iou_thr = float(self.config.get(self.model_section, 'iou_thr'))
-        self.class_name = ast.literal_eval(
-            self.config.get(self.model_section, 'class_name'))
-        self.filter_class_name = ast.literal_eval(self.config.get(
-            self.model_section, 'filter_class_name'))
-        self.inference_size = ast.literal_eval(self.config.get(
-            self.model_section, 'inference_size'))
-        self.is_letterbox = bool(self.config.get(
-            self.model_section, 'is_letterbox'))
-        if self.config.has_option(self.model_section, 'yolov5_anchors'):
-            self.anchors = ast.literal_eval(self.config.get(
-                self.model_section, 'yolov5_anchors'))
-        elif self.config.has_option(self.model_section, 'yolov7_anchors'):
-            self.anchors = ast.literal_eval(self.config.get(
-                self.model_section, 'yolov7_anchors'))
+        self.onnx_path = self.init_attribute('onnx_path')
+        self.gpu_id = int(self.init_attribute('gpu_id'))
+        self.model_only = bool(self.init_attribute('model_only', default_value=False))
+        self.score_thr = float(self.init_attribute('score_thr', default_value=0.1))
+        self.iou_thr = float(self.init_attribute('iou_thr', default_value=0.65))
+        self.framework = self.init_attribute('framework', default_value="mmyolo")
+        self.class_name = ast.literal_eval(self.init_attribute('class_name'))
+        self.filter_class_name = ast.literal_eval(self.init_attribute('filter_class_name'))
+        self.inference_size = ast.literal_eval(self.init_attribute('inference_size'))
+        self.is_letterbox = bool(self.init_attribute('is_letterbox'))
+        self.anchors = self.init_attribute('yolov5_anchors')
+        self.anchors = self.init_attribute('yolov7_anchors', default_value=self.anchors)
+        if self.anchors is not None:
+            self.anchors = ast.literal_eval(self.anchors)
         self.session = None
         self.preprocessor = None
         self.decoder = None
@@ -105,3 +98,9 @@ class YOLODet:
             anns.append(ann)
 
         return anns
+
+    def init_attribute(self, attribute, default_value=None):
+        if self.config.has_option(self.model_section, attribute):
+            return self.config.get(self.model_section, attribute)
+        
+        return default_value

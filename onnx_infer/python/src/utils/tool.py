@@ -4,6 +4,7 @@ import random
 from numpy import ndarray
 import numpy as np
 import configparser
+from scipy.special import expit
 
 
 def non_max_suppression(boxes: Union[List[ndarray], Tuple[ndarray]],
@@ -48,7 +49,7 @@ def softmax(x: ndarray, axis: int = -1) -> ndarray:
 
 def sigmoid(x: ndarray) -> ndarray:
 
-    return 1. / (1. + np.exp(-x))
+    return expit(x)
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=False, scaleFill=False, scaleup=True, stride=32):

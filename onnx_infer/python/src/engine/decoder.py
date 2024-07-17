@@ -31,7 +31,11 @@ class Decoder:
             ]
         else:
             # ax620a horizonX3 transpose channel to last dim by default
-            feats = [np.ascontiguousarray(feat) for feat in feats]
+            # feats = [np.ascontiguousarray(feat) for feat in feats]
+            feats = [
+                np.ascontiguousarray(feat[0].transpose(1, 0))
+                for feat in feats
+            ]
         if self.model_type == "YOLOV5":
             self.__yolov5_decode(feats, conf_thres, num_labels, **kwargs)
         elif self.model_type == "YOLOX":
@@ -45,6 +49,7 @@ class Decoder:
         elif self.model_type == "RTMDET":
             self.__rtmdet_decode(feats, conf_thres, num_labels, **kwargs)
         elif self.model_type == "YOLOV8":
+            print("feats->", feats[0].shape)
             self.__yolov8_decode(feats, conf_thres, num_labels, **kwargs)
         else:
             raise NotImplementedError('Only supported model type:{"YOLOV5", "YOLOX", \
@@ -74,8 +79,11 @@ class Decoder:
             num_proposal = hIdx.size
             if not num_proposal:
                 continue
-
-            score_feat = score_feat[hIdx, wIdx, aIdx] * conf_feat[hIdx, wIdx,
+            
+            if num_labels == 1:
+                score_feat = conf_feat[hIdx, wIdx, aIdx]
+            else:
+                score_feat = score_feat[hIdx, wIdx, aIdx] * conf_feat[hIdx, wIdx,
                                                                   aIdx]
             boxes = box_feat[hIdx, wIdx, aIdx]
             labels = score_feat.argmax(-1)
@@ -159,10 +167,15 @@ class Decoder:
             score_feat, box_feat = np.split(feat, [
                 num_labels,
             ], -1)
+            print("score_feat->", score_feat.shape)
+            print("box_feat->", box_feat.shape)
             score_feat = sigmoid(score_feat)
             _argmax = score_feat.argmax(-1)
+            print("_argmax->", _argmax.shape)
             _max = score_feat.max(-1)
+            print("_max->", _max.shape)
             indices = np.where(_max > conf_thres)
+            print("indices->", indices)
             hIdx, wIdx = indices
             num_proposal = hIdx.size
             if not num_proposal:
@@ -170,6 +183,7 @@ class Decoder:
 
             scores = _max[hIdx, wIdx]
             boxes = box_feat[hIdx, wIdx].reshape(num_proposal, 4, reg_max)
+            print("boxes->", boxes.shape)
             boxes = softmax(boxes, -1) @ dfl
             labels = _argmax[hIdx, wIdx]
 
