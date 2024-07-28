@@ -15,7 +15,7 @@ def main():
     output = yolov8Det.onnx_infer(test_img)
 
     print("output->", output)
-    plot_detect_results(output, test_img, is_show_label=False)
+    plot_detect_results(output, test_img, is_show_label=True)
     save_img(test_img, save_img_path)
 
 if __name__ == "__main__":

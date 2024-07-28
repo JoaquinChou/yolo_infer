@@ -1,10 +1,12 @@
-from ..engine import Preprocess, Decoder
+from ..engine import Preprocess, MMYOLO_Decoder, ULTRAL_Decoder
 from numpy import ndarray
 from ..utils import non_max_suppression, read_config
 import onnxruntime
 import numpy as np
 import math
 import ast
+import time
+from loguru import logger
 
 
 class YOLODet:
@@ -15,17 +17,25 @@ class YOLODet:
             assert 'Only one model is supported at a time. Please check the model name in the config file.'
         self.model_type = self.model_section.upper()
         self.onnx_path = self.init_attribute('onnx_path')
+        self.infer_mode = self.init_attribute('infer_mode')
         self.gpu_id = int(self.init_attribute('gpu_id'))
-        self.model_only = bool(self.init_attribute('model_only', default_value=False))
-        self.score_thr = float(self.init_attribute('score_thr', default_value=0.1))
-        self.iou_thr = float(self.init_attribute('iou_thr', default_value=0.65))
-        self.framework = self.init_attribute('framework', default_value="mmyolo")
+        self.model_only = bool(self.init_attribute(
+            'model_only', default_value=False))
+        self.score_thr = float(self.init_attribute(
+            'score_thr', default_value=0.1))
+        self.iou_thr = float(self.init_attribute(
+            'iou_thr', default_value=0.65))
+        self.framework = self.init_attribute(
+            'framework', default_value="mmyolo")
         self.class_name = ast.literal_eval(self.init_attribute('class_name'))
-        self.filter_class_name = ast.literal_eval(self.init_attribute('filter_class_name'))
-        self.inference_size = ast.literal_eval(self.init_attribute('inference_size'))
+        self.filter_class_name = ast.literal_eval(
+            self.init_attribute('filter_class_name'))
+        self.inference_size = ast.literal_eval(
+            self.init_attribute('inference_size'))
         self.is_letterbox = bool(self.init_attribute('is_letterbox'))
         self.anchors = self.init_attribute('yolov5_anchors')
-        self.anchors = self.init_attribute('yolov7_anchors', default_value=self.anchors)
+        self.anchors = self.init_attribute(
+            'yolov7_anchors', default_value=self.anchors)
         if self.anchors is not None:
             self.anchors = ast.literal_eval(self.anchors)
         self.session = None
@@ -52,17 +62,36 @@ class YOLODet:
         self.session = onnxruntime.InferenceSession(
             self.onnx_path, providers=providers)
         self.preprocessor = Preprocess(self.model_type)
-        self.decoder = Decoder(self.model_type, model_only=self.model_only)
+
+        if self.infer_mode == 'MMYOLO':
+            self.decoder = MMYOLO_Decoder(self.model_type, model_only=self.model_only)
+        elif self.infer_mode == 'ULTRAL':
+            self.decoder = ULTRAL_Decoder(self.model_type)
+        else:
+            assert 'Not support ONNX infer mode'
 
     def onnx_infer(self, img: ndarray):
-
+        start_time = time.time()
         origin_image_w, origin_image_h = img.shape[:2]
         resize_img, (ratio_w, ratio_h), dxdy = self.preprocessor(
             img, self.inference_size, self.is_letterbox)
+        end_time = time.time()
+        logger.info("Preprocessing time:{:.2f} ms".format(
+            (end_time - start_time) * 1000))
+
+        start_time = time.time()
         features = self.session.run(
             None, {self.session.get_inputs()[0].name: resize_img})
+        end_time = time.time()
+        logger.info("Running time:{:.2f} ms".format(
+            (end_time - start_time) * 1000))
+
+        start_time = time.time()
         output = self.onnx_postprocess(features, self.decoder, self.class_name, self.filter_class_name, self.score_thr, self.iou_thr,
                                        ratio_w, ratio_h, dxdy, origin_image_w, origin_image_h, self.anchors)
+        end_time = time.time()
+        logger.info("Postprocessing time:{:.2f} ms".format(
+            (end_time - start_time) * 1000))
 
         return output
 
@@ -102,5 +131,5 @@ class YOLODet:
     def init_attribute(self, attribute, default_value=None):
         if self.config.has_option(self.model_section, attribute):
             return self.config.get(self.model_section, attribute)
-        
+
         return default_value
