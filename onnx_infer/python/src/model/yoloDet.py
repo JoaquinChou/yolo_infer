@@ -25,8 +25,6 @@ class YOLODet:
             'score_thr', default_value=0.1))
         self.iou_thr = float(self.init_attribute(
             'iou_thr', default_value=0.65))
-        self.framework = self.init_attribute(
-            'framework', default_value="mmyolo")
         self.class_name = ast.literal_eval(self.init_attribute('class_name'))
         self.filter_class_name = ast.literal_eval(
             self.init_attribute('filter_class_name'))
