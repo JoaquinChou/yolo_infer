@@ -7,29 +7,12 @@ import numpy as np
 
 class Preprocess:
 
-    def __init__(self, model_type: str):
+    def __init__(self, model_type: str, img_mean: List, img_std: List, img_is_rgb: bool):
         print(f"model_type: {model_type}")
-        if model_type in ("YOLOV5", "YOLOV6", "YOLOV7", "YOLOV8"):
-            mean = np.array([0, 0, 0], dtype=np.float32)
-            std = np.array([255, 255, 255], dtype=np.float32)
-            is_rgb = True
-        elif model_type == "YOLOX":
-            mean = np.array([0, 0, 0], dtype=np.float32)
-            std = np.array([1, 1, 1], dtype=np.float32)
-            is_rgb = False
-        elif model_type == "PPYOLOE":
-            mean = np.array([123.675, 116.28, 103.53], dtype=np.float32)
-            std = np.array([58.395, 57.12, 57.375], dtype=np.float32)
-            is_rgb = True
-
-        elif model_type == "PPYOLOEP":
-            mean = np.array([0, 0, 0], dtype=np.float32)
-            std = np.array([255, 255, 255], dtype=np.float32)
-            is_rgb = True
-        elif model_type == "RTMDET":
-            mean = np.array([103.53, 116.28, 123.675], dtype=np.float32)
-            std = np.array([57.375, 57.12, 58.3955], dtype=np.float32)
-            is_rgb = False
+        if model_type in ("YOLOV5", "YOLOX", "YOLOV6", "YOLOV7", "YOLOV8", "PPYOLOE", "PPYOLOEP", "RTMDET"):
+            mean = np.array(img_mean, dtype=np.float32)
+            std = np.array(img_std, dtype=np.float32)
+            is_rgb = img_is_rgb
         else:
             raise NotImplementedError('Only supported model type:{"YOLOV5", "YOLOX", \
                 "PPYOLOE", "PPYOLOEP", "YOLOV6", "YOLOV7", "RTMDET", "YOLOV8"}')

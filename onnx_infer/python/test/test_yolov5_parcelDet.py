@@ -6,7 +6,7 @@ from src.utils import plot_detect_results, save_img
 
 
 def main():
-    config_path = '../config/YOLOV5_parcel_1c.ini'
+    config_path = '../config/YOLOV5_bind_1c.ini'
     test_img_path = './data/test_img/ring_parcel.jpg'
     save_img_path = './data/test_res/ring_parcel.jpg'
     test_img = cv2.imread(test_img_path)

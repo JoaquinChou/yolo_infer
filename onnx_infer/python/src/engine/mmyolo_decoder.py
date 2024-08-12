@@ -113,32 +113,33 @@ class MMYOLO_Decoder:
             stride = 8 << i
             score_feat, box_feat, conf_feat = np.split(
                 feat, [num_labels, num_labels + 4], -1)
-            conf_feat = sigmoid(conf_feat)
 
-            hIdx, wIdx, _ = np.where(conf_feat > conf_thres)
+            score_feat = sigmoid(conf_feat) * sigmoid(score_feat)
+
+            _argmax = score_feat.argmax(-1)
+            _max = score_feat.max(-1)
+            indices = np.where(_max > conf_thres)
+            hIdx, wIdx = indices
 
             num_proposal = hIdx.size
             if not num_proposal:
                 continue
 
-            score_feat = sigmoid(score_feat[hIdx, wIdx]) * conf_feat[hIdx,
-                                                                     wIdx]
+            scores = _max[hIdx, wIdx]
             boxes = box_feat[hIdx, wIdx]
-            labels = score_feat.argmax(-1)
-            scores = score_feat.max(-1)
-            indices = np.where(scores > conf_thres)[0]
-
-            if len(indices) == 0:
+            labels = _argmax[hIdx, wIdx]
+            num_proposal = hIdx.size
+            if not num_proposal:
                 continue
 
-            for idx in indices:
-                score = scores[idx]
-                label = labels[idx]
+            for k in range(num_proposal):
+                score = scores[k]
+                label = labels[k]
 
-                x, y, w, h = boxes[idx]
+                x, y, w, h = boxes[k]
 
-                x = (x + wIdx[idx]) * stride
-                y = (y + hIdx[idx]) * stride
+                x = (x + wIdx[k]) * stride
+                y = (y + hIdx[k]) * stride
                 w = np.exp(w) * stride
                 h = np.exp(h) * stride
 

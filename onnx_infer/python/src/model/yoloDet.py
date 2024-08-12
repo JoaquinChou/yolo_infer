@@ -31,6 +31,9 @@ class YOLODet:
         self.inference_size = ast.literal_eval(
             self.init_attribute('inference_size'))
         self.is_letterbox = bool(self.init_attribute('is_letterbox'))
+        self.img_mean = ast.literal_eval(self.init_attribute('img_mean'))
+        self.img_std = ast.literal_eval(self.init_attribute('img_std'))
+        self.img_is_rgb = bool(self.init_attribute('img_is_rgb'))
         self.anchors = self.init_attribute('yolov5_anchors')
         self.anchors = self.init_attribute(
             'yolov7_anchors', default_value=self.anchors)
@@ -59,7 +62,7 @@ class YOLODet:
 
         self.session = onnxruntime.InferenceSession(
             self.onnx_path, providers=providers)
-        self.preprocessor = Preprocess(self.model_type)
+        self.preprocessor = Preprocess(self.model_type, self.img_mean, self.img_std, self.img_is_rgb)
 
         if self.infer_mode == 'MMYOLO':
             self.decoder = MMYOLO_Decoder(self.model_type, model_only=self.model_only)
