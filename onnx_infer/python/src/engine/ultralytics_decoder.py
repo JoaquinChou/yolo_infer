@@ -57,7 +57,9 @@ class ULTRAL_Decoder:
             [[(10, 13), (16, 30),
               (33, 23)], [(30, 61), (62, 45),
                           (59, 119)], [(116, 90), (156, 198), (373, 326)]])
-        pass
+        
+        # YOLOv5u adopts an anchor-free split Ultralytics head.
+        self.__yolov8_decode(feats, conf_thres, num_labels)
 
     def __yolox_decode(self,
                        feats: List[ndarray],
